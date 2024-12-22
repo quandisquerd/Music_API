@@ -66,8 +66,6 @@ WHERE id = ${id}`;
 const getAllMusic = async (req, res) => {
   try {
     const musicList = await Music.findAll();
-    console.log(musicList);
-
     return res.status(200).json(musicList);
   } catch (error) {
     res.status(500).send("Error fetching music list");
