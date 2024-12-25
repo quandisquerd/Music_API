@@ -2,17 +2,13 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
-app.use(cors());
-app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With,content-type"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  next();
-});
+const corsOptions = {
+  origin: "*", // Bạn có thể thay "*" bằng URL cụ thể như 'http://localhost:5173' hoặc 'https://your-frontend-url.vercel.app'
+  methods: ["GET", "POST", "PUT", "DELETE"], // Phương thức HTTP được phép
+  allowedHeaders: ["Content-Type", "Authorization"], // Header được phép
+  credentials: true, // Cho phép credentials (cookies, authorization headers, etc.)
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 const musicRouter = require("./routes/music");
 const albumRouter = require("./routes/album");
