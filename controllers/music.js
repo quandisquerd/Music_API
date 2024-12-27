@@ -218,8 +218,7 @@ const UpdateViewMusic = async (req, res) => {
 const UploadFile = async (req, res) => {
   try {
     const inputFile = req.file.path; // File gốc
-    const outputDir = path.join('/tmp/hls', Date.now().toString()); // Sử dụng /tmp/hls
-
+    const outputDir = path.join(__dirname, "hls", Date.now().toString()); // Thư mục chứa output
 
     try {
       // Tạo thư mục output
