@@ -3,6 +3,13 @@ const Music = require("../models/Music");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { where } = require("sequelize");
+const cloudinary = require("cloudinary").v2;
+const { Readable } = require("stream");
+require("dotenv").config();
+const ffmpeg = require("fluent-ffmpeg");
+const path = require("path");
+const fs = require("fs");
+
 const musicController = {
   getAll: async (req, res) => {
     try {
@@ -62,6 +69,11 @@ WHERE id = ${id}`;
     }
   },
 };
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
 
 const getAllMusic = async (req, res) => {
   try {
@@ -169,7 +181,7 @@ const GetMusicWithPlay = async (req, res) => {
               id: song.User.id,
               username: song.User.username,
               avatar: song.User.avatar,
-              followersCount: song.User.followersCount
+              followersCount: song.User.followersCount,
             }
           : null,
       }));
@@ -198,8 +210,106 @@ const UpdateViewMusic = async (req, res) => {
     }
     return res.status(200).json({ message: "Update view Music success" });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ message: "Error update view music data" });
+  }
+};
+
+
+const UploadFile = async (req, res) => {
+  try {
+    const inputFile = req.file.path; // File gốc
+    const outputDir = path.join(__dirname, "hls", Date.now().toString()); // Thư mục chứa output
+
+    try {
+      // Tạo thư mục output
+      fs.mkdirSync(outputDir, { recursive: true });
+
+      // Chuyển đổi sang HLS
+      await new Promise((resolve, reject) => {
+        ffmpeg(inputFile)
+          .outputOptions([
+            "-hls_time 10", // Chia thành từng đoạn 10 giây
+            "-hls_list_size 0", // Giữ tất cả các segment
+            "-f hls",
+          ])
+          .output(path.join(outputDir, "playlist.m3u8"))
+          .on("end", resolve)
+          .on("error", reject)
+          .run();
+      });
+
+      // Kiểm tra xem tệp .m3u8 đã được tạo hay chưa
+      const playlistFile = path.join(outputDir, "playlist.m3u8");
+      if (!fs.existsSync(playlistFile)) {
+        throw new Error("Playlist file (.m3u8) not created.");
+      }
+
+      // Chuyển đổi nội dung của playlist.m3u8 để bỏ phần mở rộng .ts
+      let playlistContent = fs.readFileSync(playlistFile, "utf8");
+      playlistContent = playlistContent.replace(/\.ts/g, "");
+
+      // Ghi lại nội dung đã chỉnh sửa vào file m3u8
+      fs.writeFileSync(playlistFile, playlistContent, "utf8");
+
+      // Upload các segment và playlist lên Cloudinary
+      const files = fs.readdirSync(outputDir);
+      const uploadPromises = files.map(async (file) => {
+        const filePath = path.join(outputDir, file);
+
+        // Đọc file thành buffer
+        const fileBuffer = fs.readFileSync(filePath);
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "raw", // Upload file dưới dạng raw
+            folder: `music/hls/${path.basename(outputDir)}`, // Tên thư mục trên Cloudinary
+            public_id: file.split(".")[0], // Tên file (không có phần mở rộng)
+          },
+          (error, result) => {
+            if (error) console.error("Upload error:", error);
+            else console.log("Uploaded:", result.secure_url);
+          }
+        );
+
+        // Đẩy dữ liệu vào stream
+        const readableStream = new Readable();
+        readableStream.push(fileBuffer);
+        readableStream.push(null);
+        readableStream.pipe(stream);
+
+        // Trả về URL của từng file đã được tải lên
+        return new Promise((resolve, reject) => {
+          stream.on("finish", resolve);
+          stream.on("error", reject);
+        });
+      });
+
+      await Promise.all(uploadPromises); // Đợi tất cả file upload xong
+
+      // Lấy URL của playlist và các segment
+      const playlistUrl = `https://res.cloudinary.com/${
+        process.env.CLOUD_NAME
+      }/raw/upload/v1/music/hls/${path.basename(outputDir)}/playlist`;
+      const segmentUrls = files
+        .filter((file) => file.endsWith(".ts"))
+        .map(
+          (file) =>
+            `https://res.cloudinary.com/${
+              process.env.CLOUD_NAME
+            }/raw/upload/v1/music/hls/${path.basename(outputDir)}/${file}`
+        );
+
+      // Trả về URL của playlist và các segment
+      res.json({ playlistUrl, segmentUrls });
+
+      // Dọn dẹp file tạm
+      fs.rmSync(outputDir, { recursive: true, force: true });
+      fs.unlinkSync(inputFile);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Upload failed");
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Error upload file music data" });
   }
 };
 
@@ -210,4 +320,5 @@ module.exports = {
   GetMusicDetail,
   GetMusicWithPlay,
   UpdateViewMusic,
+  UploadFile
 };

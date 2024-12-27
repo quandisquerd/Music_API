@@ -86,8 +86,8 @@ const testDecre = async (req, res) => {
     password: "quan",
   };
   const ivs = "";
-  const encryptData = JSON.stringify(data);
-  const { encryptedData, iv } = await encrypt(encryptData);
+  const encryptData1 = JSON.stringify(data);
+  const { encryptedData, iv } = await encryptData(encryptData1);
   try {
     // const decryptdata = await decrypt(data, ivs);
     // const dataPass = JSON.parse(decryptdata);

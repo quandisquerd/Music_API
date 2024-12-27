@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+
 require("dotenv").config();
 const corsOptions = {
   origin: "*", // Bạn có thể thay "*" bằng URL cụ thể như 'http://localhost:5173' hoặc 'https://your-frontend-url.vercel.app'
@@ -10,6 +11,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+
 const musicRouter = require("./routes/music");
 const albumRouter = require("./routes/album");
 const authRouter = require("./routes/auth");
