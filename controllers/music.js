@@ -310,7 +310,7 @@ const UploadFile = async (req, res) => {
       res.status(500).send("Upload failed");
     }
   } catch (error) {
-    return res.status(500).json({ message: "Error upload file music data" });
+    return res.status(500).json({ message: "Error upload file music data",error });
   }
 };
 
