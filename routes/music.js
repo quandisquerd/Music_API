@@ -11,7 +11,8 @@ const {
   UploadFile,
 } = require("../controllers/music");
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: '/tmp/uploads/' }); // Thay đổi thư mục lưu trữ tạm
+
 router.get("/topplay", GetMusicWithPlay);
 router.get("/music/:id", GetMusicDetail);
 router.post("/music/add", AddMusic);
