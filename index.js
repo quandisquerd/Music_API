@@ -1,8 +1,9 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-
+const bodyParser = require("body-parser");
 require("dotenv").config();
+
 const corsOptions = {
   origin: "*", // Bạn có thể thay "*" bằng URL cụ thể như 'http://localhost:5173' hoặc 'https://your-frontend-url.vercel.app'
   methods: ["GET", "POST", "PUT", "DELETE"], // Phương thức HTTP được phép
@@ -11,7 +12,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
-
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 const musicRouter = require("./routes/music");
 const albumRouter = require("./routes/album");
 const authRouter = require("./routes/auth");
