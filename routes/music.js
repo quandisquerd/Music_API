@@ -11,16 +11,7 @@ const {
   UploadFile,
 } = require("../controllers/music");
 const multer = require("multer");
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, '/tmp'); // Sử dụng /tmp thay vì uploads/
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
-const upload = multer({ storage: storage });
+const upload = multer({ dest: 'tmp/' }); // Thay đổi thư mục lưu trữ tạm
 
 router.get("/topplay", GetMusicWithPlay);
 router.get("/music/:id", GetMusicDetail);
