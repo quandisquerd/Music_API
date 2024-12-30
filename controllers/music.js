@@ -217,8 +217,8 @@ const UpdateViewMusic = async (req, res) => {
 
 const UploadFile = async (req, res) => {
   try {
-    const inputFile = req.file.path; // File gốc trong /tmp
-    const outputDir = path.join('/tmp', Date.now().toString()); // Thư mục output trong /tmp
+    const inputFile = req.file.path; // File gốc
+    const outputDir = path.join(__dirname, "/tmp", Date.now().toString()); // Thư mục chứa output
 
     try {
       // Tạo thư mục output
@@ -228,8 +228,8 @@ const UploadFile = async (req, res) => {
       await new Promise((resolve, reject) => {
         ffmpeg(inputFile)
           .outputOptions([
-            "-hls_time 10",
-            "-hls_list_size 0",
+            "-hls_time 10", // Chia thành từng đoạn 10 giây
+            "-hls_list_size 0", // Giữ tất cả các segment
             "-f hls",
           ])
           .output(path.join(outputDir, "playlist.m3u8"))
@@ -238,93 +238,80 @@ const UploadFile = async (req, res) => {
           .run();
       });
 
-      // Kiểm tra playlist file
+      // Kiểm tra xem tệp .m3u8 đã được tạo hay chưa
       const playlistFile = path.join(outputDir, "playlist.m3u8");
       if (!fs.existsSync(playlistFile)) {
         throw new Error("Playlist file (.m3u8) not created.");
       }
 
-      // Chỉnh sửa nội dung playlist
+      // Chuyển đổi nội dung của playlist.m3u8 để bỏ phần mở rộng .ts
       let playlistContent = fs.readFileSync(playlistFile, "utf8");
       playlistContent = playlistContent.replace(/\.ts/g, "");
+
+      // Ghi lại nội dung đã chỉnh sửa vào file m3u8
       fs.writeFileSync(playlistFile, playlistContent, "utf8");
 
-      // Upload lên Cloudinary
+      // Upload các segment và playlist lên Cloudinary
       const files = fs.readdirSync(outputDir);
       const uploadPromises = files.map(async (file) => {
         const filePath = path.join(outputDir, file);
+
+        // Đọc file thành buffer
         const fileBuffer = fs.readFileSync(filePath);
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "raw", // Upload file dưới dạng raw
+            folder: `music/hls/${path.basename(outputDir)}`, // Tên thư mục trên Cloudinary
+            public_id: file.split(".")[0], // Tên file (không có phần mở rộng)
+          },
+          (error, result) => {
+            if (error) console.error("Upload error:", error);
+            else console.log("Uploaded:", result.secure_url);
+          }
+        );
 
+        // Đẩy dữ liệu vào stream
+        const readableStream = new Readable();
+        readableStream.push(fileBuffer);
+        readableStream.push(null);
+        readableStream.pipe(stream);
+
+        // Trả về URL của từng file đã được tải lên
         return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            {
-              resource_type: "raw",
-              folder: `music/hls/${path.basename(outputDir)}`,
-              public_id: file.split(".")[0],
-            },
-            (error, result) => {
-              if (error) {
-                console.error("Upload error:", error);
-                reject(error);
-              } else {
-                console.log("Uploaded:", result.secure_url);
-                resolve(result);
-              }
-            }
-          );
-
-          const readableStream = new Readable();
-          readableStream.push(fileBuffer);
-          readableStream.push(null);
-          readableStream.pipe(stream);
+          stream.on("finish", resolve);
+          stream.on("error", reject);
         });
       });
 
-      const uploadResults = await Promise.all(uploadPromises);
+      await Promise.all(uploadPromises); // Đợi tất cả file upload xong
 
-      // Tạo URLs
-      const baseUrl = `https://res.cloudinary.com/${process.env.CLOUD_NAME}/raw/upload/v1/music/hls/${path.basename(outputDir)}`;
-      const playlistUrl = `${baseUrl}/playlist`;
+      // Lấy URL của playlist và các segment
+      const playlistUrl = `https://res.cloudinary.com/${
+        process.env.CLOUD_NAME
+      }/raw/upload/v1/music/hls/${path.basename(outputDir)}/playlist`;
       const segmentUrls = files
-        .filter(file => file.endsWith(".ts"))
-        .map(file => `${baseUrl}/${file.split(".")[0]}`);
+        .filter((file) => file.endsWith(".ts"))
+        .map(
+          (file) =>
+            `https://res.cloudinary.com/${
+              process.env.CLOUD_NAME
+            }/raw/upload/v1/music/hls/${path.basename(outputDir)}/${file}`
+        );
 
-      // Dọn dẹp files trong /tmp
+      // Trả về URL của playlist và các segment
+      res.json({ playlistUrl, segmentUrls });
+
+      // Dọn dẹp file tạm
       fs.rmSync(outputDir, { recursive: true, force: true });
       fs.unlinkSync(inputFile);
-
-      res.json({ 
-        success: true,
-        playlistUrl, 
-        segmentUrls 
-      });
-
     } catch (error) {
-      // Đảm bảo dọn dẹp files nếu có lỗi
-      if (fs.existsSync(outputDir)) {
-        fs.rmSync(outputDir, { recursive: true, force: true });
-      }
-      if (fs.existsSync(inputFile)) {
-        fs.unlinkSync(inputFile);
-      }
-      
-      console.error("Processing error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Error processing file",
-        error: error.message
-      });
+      console.error(error);
+      res.status(500).send("Upload failed");
     }
   } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error uploading file",
-      error: error.message
-    });
+    return res.status(500).json({ message: "Error upload file music data",error });
   }
 };
-
 module.exports = {
   musicController,
   getAllMusic,
