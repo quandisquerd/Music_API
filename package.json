@@ -8,9 +8,10 @@
     "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "engines": {
-    "node": "16.x"
-  },
+"engines": {
+  "node": ">=18.12"
+}
+
   "author": "",
   "license": "ISC",
   "dependencies": {
