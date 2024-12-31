@@ -12,8 +12,10 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+// Tăng giới hạn payload lên 500MB
+app.use(express.json({ limit: "500mb" })); // JSON payload
+app.use(bodyParser.json({ limit: "500mb" })); // body-parser JSON
+app.use(bodyParser.urlencoded({ limit: "500mb", extended: true }));
 const musicRouter = require("./routes/music");
 const albumRouter = require("./routes/album");
 const authRouter = require("./routes/auth");
