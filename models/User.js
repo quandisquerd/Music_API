@@ -12,6 +12,10 @@ const User = sequelize.define("User", {
   phone: { type: DataTypes.STRING, allowNull: true },
   avatar: { type: DataTypes.STRING, allowNull: true },
   banner: { type: DataTypes.STRING, allowNull: true },
+  cloudname: {type : DataTypes.STRING, allowNull: true},
+  apikey: {type : DataTypes.STRING, allowNull: true},
+  apisecret: {type : DataTypes.STRING, allowNull: true},
+  upload_preset : {type:DataTypes.STRING , allowNull:true},
   description: { type: DataTypes.TEXT, allowNull: true },
   status: {
     type: DataTypes.ENUM("active", "inactive", "banned"),
