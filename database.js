@@ -1,35 +1,35 @@
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
 const pg = require('pg');
-const sequelize = new Sequelize(process.env.POSTGRES_URL, {
-  dialect: 'postgres',
-   dialectModule: pg,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
-});
-sequelize.authenticate()
-  .then(() => {
-    console.log('Connect to PostgreSQL successfully!');
-  })
-  .catch(err => {
-    console.error('Unable to connect to the database:', err);
-  });
-// const sequelize = new Sequelize("MUSIC", "postgres", "admin", {
-//   host: "localhost",
-//   dialect: "postgres",
-//   port: 5432,
+// const sequelize = new Sequelize(process.env.POSTGRES_URL, {
+//   dialect: 'postgres',
+//    dialectModule: pg,
+//   dialectOptions: {
+//     ssl: {
+//       require: true,
+//       rejectUnauthorized: false,
+//     },
+//   },
 // });
-// sequelize
-//   .authenticate()
+// sequelize.authenticate()
 //   .then(() => {
-//     console.log("Connect to PostgreSQL successfully!");
+//     console.log('Connect to PostgreSQL successfully!');
 //   })
-//   .catch((err) => {
-//     console.error("Unable to connect to the database:", err);
+//   .catch(err => {
+//     console.error('Unable to connect to the database:', err);
 //   });
+const sequelize = new Sequelize("MUSIC", "postgres", "admin", {
+  host: "localhost",
+  dialect: "postgres",
+  port: 5432,
+});
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log("Connect to PostgreSQL successfully!");
+  })
+  .catch((err) => {
+    console.error("Unable to connect to the database:", err);
+  });
 
 module.exports = sequelize;

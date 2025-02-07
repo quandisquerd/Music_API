@@ -63,6 +63,9 @@ importers:
       sequelize:
         specifier: ^6.37.5
         version: 6.37.5(pg-hstore@2.3.4)(pg@8.13.1)
+      streamifier:
+        specifier: ^0.1.1
+        version: 0.1.1
 
 packages:
 
@@ -847,6 +850,10 @@ packages:
 
   stream-skip@1.0.3:
     resolution: {integrity: sha512-2rB0uBiOnYSQwJxJ3wZLher+fz0yyXQxKuKnVTsidHmkqvC8rWZ2AbX50ZVdz7fsL6zkYkqaN/pPD0RldKIbpQ==}
+
+  streamifier@0.1.1:
+    resolution: {integrity: sha512-zDgl+muIlWzXNsXeyUfOk9dChMjlpkq0DRsxujtYPgyJ676yQ8jEm6zzaaWHFDg5BNcLuif0eD2MTyJdZqXpdg==}
+    engines: {node: '>=0.10'}
 
   streamsearch@1.1.0:
     resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
@@ -1768,6 +1775,8 @@ snapshots:
   stream-shift@1.0.3: {}
 
   stream-skip@1.0.3: {}
+
+  streamifier@0.1.1: {}
 
   streamsearch@1.1.0: {}
 

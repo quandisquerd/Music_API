@@ -69,11 +69,7 @@ WHERE id = ${id}`;
     }
   },
 };
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
-});
+
 
 const getAllMusic = async (req, res) => {
   try {
@@ -93,10 +89,13 @@ const AddMusic = async (req, res) => {
     }
     const decoded = jwt.verify(token, "boquan");
     const userId = decoded.id;
+    console.log(decoded);
+
     const data = req.body;
     if (!data) {
       return res.status(500).json({ message: "Data field cannot be empty!" });
     }
+
     const music = await Music.create({
       userId: userId,
       genreId: data?.genreId,
@@ -106,12 +105,13 @@ const AddMusic = async (req, res) => {
       description: data?.description,
       image: data?.image,
     });
+    console.log("okok");
     if (music) {
       return res.status(200).json({ message: "Add Music success" });
     }
     return res.status(404).json({ message: "Music not found" });
   } catch (error) {
-    res.status(500).send("Error added music");
+    return res.status(404).json({ message: "Music err", error });
   }
 };
 const GetMusicDetail = async (req, res) => {
@@ -213,12 +213,35 @@ const UpdateViewMusic = async (req, res) => {
     return res.status(500).json({ message: "Error update view music data" });
   }
 };
-
-
+const uploadCancelMap = new Map();
 const UploadFile = async (req, res) => {
   try {
+    
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(500).json({ message: "Token field cannot be empty!" });
+    }
+    const decoded = jwt.verify(token, "boquan");
+    const userId = decoded.id;
+    const id= userId;
+    const user = await User.findByPk(id);
+
+    cloudinary.config({
+      cloud_name: user?.cloudname,
+      api_key: user?.apikey,
+      api_secret: user?.apisecret,
+    });
+    if (!uploadCancelMap.has(userId)) {
+      uploadCancelMap.set(userId, false);
+    }
+
+    const isCancelled = uploadCancelMap.get(userId);
+
+    if (isCancelled) {
+      return res.status(400).json({ message: "Process has been canceled." });
+    }
     const inputFile = req.file.path; // File gốc
-    const outputDir = path.join( "hls", Date.now().toString()); // Thư mục chứa output
+    const outputDir = path.join("hls", Date.now().toString()); // Thư mục chứa output
 
     try {
       // Tạo thư mục output
@@ -282,22 +305,20 @@ const UploadFile = async (req, res) => {
           stream.on("error", reject);
         });
       });
-
       await Promise.all(uploadPromises); // Đợi tất cả file upload xong
 
       // Lấy URL của playlist và các segment
       const playlistUrl = `https://res.cloudinary.com/${
-        process.env.CLOUD_NAME
+        user?.cloudname
       }/raw/upload/v1/music/hls/${path.basename(outputDir)}/playlist`;
       const segmentUrls = files
         .filter((file) => file.endsWith(".ts"))
         .map(
           (file) =>
             `https://res.cloudinary.com/${
-              process.env.CLOUD_NAME
+              user?.cloudname
             }/raw/upload/v1/music/hls/${path.basename(outputDir)}/${file}`
         );
-
       // Trả về URL của playlist và các segment
       res.json({ playlistUrl, segmentUrls });
 
@@ -309,7 +330,76 @@ const UploadFile = async (req, res) => {
       res.status(500).send("Upload failed");
     }
   } catch (error) {
-    return res.status(500).json({ message: "Error upload file music data",error });
+    return res
+      .status(500)
+      .json({ message: "Error upload file music data", error });
+  }
+};
+const cancelUpload = (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).json({ message: "Token field cannot be empty!" });
+    }
+
+    // Kiểm tra tính hợp lệ của token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, "boquan");
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid token!" });
+    }
+
+    const userId = decoded.id;
+
+    // Đánh dấu hủy quá trình upload của user
+    if (uploadCancelMap.has(userId)) {
+      uploadCancelMap.set(userId, true);
+      return res.json({ message: "Upload process canceled." });
+    } else {
+      return res
+        .status(404)
+        .json({ message: "No upload process found for this user." });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error canceling upload", error });
+  }
+};
+const CheckuploadFileUser = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).json({ message: "Token field cannot be empty!" });
+    }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, "boquan");
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid token!" });
+    }
+    const userId = decoded.id;
+    const id = userId;
+    console.log(userId);
+
+    const user = await User.findByPk(id);
+    if (
+      !user ||
+      !user.cloudname ||
+      !user.apikey ||
+      !user.apisecret ||
+      !user.upload_preset
+    ) {
+      return res.status(200).json({
+        message: "Empty cloud_name, api_key, api_secret, or upload_preset!",
+        status: false,
+      });
+    } else {
+      return res.status(200).json({ message: "Successfully!", status: true });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error checking upload for user", error });
   }
 };
 module.exports = {
@@ -319,5 +409,7 @@ module.exports = {
   GetMusicDetail,
   GetMusicWithPlay,
   UpdateViewMusic,
-  UploadFile
+  UploadFile,
+  cancelUpload,
+  CheckuploadFileUser,
 };
