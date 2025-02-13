@@ -2,7 +2,7 @@ name = "node-postgresql-api"
 type = "javascript" 
 
 [env.production]
-main = "./index.js"  
+main = "index.js"  
 route = ""          
 workers_dev = true   
 
