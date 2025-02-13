@@ -13,7 +13,7 @@ const {
   CheckuploadFileUser,
 } = require("../controllers/music");
 const multer = require("multer");
-const upload = multer({ dest: "/tmp/uploads" });
+const upload = multer({ dest: "uploads" });
 router.get("/topplay", GetMusicWithPlay);
 router.get("/music/:id", GetMusicDetail);
 router.post("/music/add", AddMusic);
