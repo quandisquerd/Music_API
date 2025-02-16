@@ -5,6 +5,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "install": "apt-get update && apt-get install -y ffmpeg",
     "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
