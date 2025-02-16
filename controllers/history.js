@@ -53,9 +53,9 @@ const GetHistoryWithUser = async (req, res) => {
       include: [
         {
           model: Music, // Bao gồm thông tin bài hát
-        },
-        {
-          model: User, // Bao gồm thông tin người dùng
+          include: [
+            {
+              model: User,}]
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -85,12 +85,12 @@ const GetHistoryWithUser = async (req, res) => {
           createdAt: history.Music.createdAt,
           updatedAt: history.Music.updatedAt,
         },
-        User: history.User
+        User: history.Music.User
           ? {
-              id: history.User.id,
-              username: history.User.username,
-              avatar: history.User.avatar,
-              followersCount: history.User.followersCount
+              id: history.Music.User.id,
+              username: history.Music.User.username,
+              avatar: history.Music.User.avatar,
+              followersCount: history.Music.User.followersCount
             }
           : null,
       }));
