@@ -24,6 +24,7 @@ const historyRouter = require("./routes/history");
 const favoriteRouter = require("./routes/favorite");
 const followRouter = require("./routes/follow");
 const commentRouter = require("./routes/comment");
+const bannerRouter = require("./routes/banner");
 app.use("/api", musicRouter);
 app.use("/api", albumRouter);
 app.use("/api", authRouter);
@@ -32,6 +33,7 @@ app.use("/api", historyRouter);
 app.use("/api", favoriteRouter);
 app.use("/api", followRouter);
 app.use("/api", commentRouter);
+app.use("/api", bannerRouter);
 app.listen(process.env.PORT, () =>
   console.log(`Server is running on port ${process.env.PORT}`)
 );

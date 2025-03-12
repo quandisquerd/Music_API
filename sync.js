@@ -7,7 +7,7 @@ const History = require("./models/History")
 const Favorite = require("./models/Favorite")
 const Follow = require("./models/Folow")
 const Comment = require("./models/Comment")
-
+const Banner = require("./models/Banner")
 
 const syncDatabase = async () => {
   try {

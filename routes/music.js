@@ -11,6 +11,7 @@ const {
   UploadFile,
   cancelUpload,
   CheckuploadFileUser,
+  FindMusic,
 } = require("../controllers/music");
 const multer = require("multer");
 const upload = multer({ dest: "uploads" });
@@ -21,6 +22,7 @@ router.delete("/musics/:id", checkPermission.check, musicController.remove);
 router.post("/musics/search", musicController.search);
 router.get("/music", getAllMusic);
 router.put("/updateview/:id", UpdateViewMusic);
+router.post("/findmusic", FindMusic);
 
 // API để tải lên tệp
 router.post("/upload", upload.single("audio"), UploadFile);
