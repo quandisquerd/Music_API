@@ -9,6 +9,7 @@ require("dotenv").config();
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs");
+const { Op } = require("sequelize");
 
 const musicController = {
   getAll: async (req, res) => {
@@ -69,7 +70,6 @@ WHERE id = ${id}`;
     }
   },
 };
-
 
 const getAllMusic = async (req, res) => {
   try {
@@ -216,14 +216,13 @@ const UpdateViewMusic = async (req, res) => {
 const uploadCancelMap = new Map();
 const UploadFile = async (req, res) => {
   try {
-    
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(500).json({ message: "Token field cannot be empty!" });
     }
     const decoded = jwt.verify(token, "boquan");
     const userId = decoded.id;
-    const id= userId;
+    const id = userId;
     const user = await User.findByPk(id);
 
     cloudinary.config({
@@ -402,6 +401,55 @@ const CheckuploadFileUser = async (req, res) => {
     res.status(500).json({ message: "Error checking upload for user", error });
   }
 };
+const FindMusic = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const musics = await Music.findAll({
+      where: { name: { [Op.iLike]: `%${name}%` } },
+      include: [{ model: User }],
+    });
+    if (musics.length > 0) {
+      const data = musics.map((song) => ({
+        id: song.id,
+        userId: song.User?.id,
+        songId: song.id,
+        createdAt: song.createdAt,
+        updatedAt: song.updatedAt,
+        Music: {
+          id: song.id,
+          name: song.name,
+          file: song.file,
+          description: song.description,
+          view: song.view,
+          favorite: song.favorite,
+          repost: song.repost,
+          image: song.image,
+          status: song.status,
+          genreId: song.genreId,
+          userId: song.userId,
+          albumId: song.albumId,
+          createdAt: song.createdAt,
+          updatedAt: song.updatedAt,
+        },
+        User: song.User
+          ? {
+              id: song.User.id,
+              username: song.User.username,
+              avatar: song.User.avatar,
+              followersCount: song.User.followersCount,
+            }
+          : null,
+      }));
+      return res.status(200).json({
+        message: "Find Music success",
+        data,
+      });
+    }
+    return res.status(404).json({ message: "Music not found" });
+  } catch (error) {
+    res.status(500).json({ message: "Error find music", error });
+  }
+};
 module.exports = {
   musicController,
   getAllMusic,
@@ -412,4 +460,5 @@ module.exports = {
   UploadFile,
   cancelUpload,
   CheckuploadFileUser,
+  FindMusic
 };
