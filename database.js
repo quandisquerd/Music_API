@@ -1,17 +1,17 @@
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
-const pg = require('pg');
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-  host: process.env.DB_HOST,
-  dialect: "postgres", // Chọn PostgreSQL làm database
-  port: process.env.DB_PORT,
+
+// Sử dụng connection string trực tiếp
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
+  protocol: "postgres",
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false, // Nếu AWS yêu cầu SSL
-    },
+      rejectUnauthorized: false
+    }
   },
-  logging: false, // Tắt logging SQL trong console (tùy chọn)
+  logging: false, // Tắt logging SQL trong console
 });
 
 // Kiểm tra kết nối
@@ -21,20 +21,14 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
     console.log("✅ Kết nối PostgreSQL thành công!");
   } catch (error) {
     console.error("❌ Lỗi kết nối PostgreSQL:", error.message);
+    
+    // Log chi tiết lỗi để debug
+    console.error("Chi tiết lỗi:", {
+      code: error.original?.code,
+      detail: error.original?.detail,
+      hint: error.original?.hint
+    });
   }
 })();
-// const sequelize = new Sequelize("MUSIC", "postgres", "admin", {
-//   host: "localhost",
-//   dialect: "postgres",
-//   port: 5432,
-// });
-// sequelize
-//   .authenticate()
-//   .then(() => {
-//     console.log("Connect to PostgreSQL successfully!");
-//   })
-//   .catch((err) => {
-//     console.error("Unable to connect to the database:", err);
-//   });
 
 module.exports = sequelize;
