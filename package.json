@@ -5,11 +5,13 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "install": "apt-get update && apt-get install -y ffmpeg",
-    "start": "nodemon index.js",
+    "install": "apt-get update && apt-get install -y ffmpeg || true",
+    "dev" : "nodemon index.js",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
+    "npm": ">=9.0.0",
     "node": ">=18.12"
   },
   "author": "",
