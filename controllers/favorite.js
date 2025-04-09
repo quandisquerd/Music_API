@@ -36,22 +36,58 @@ const getAllFavoriteWithUser = async (req, res) => {
     }
     const decoded = jwt.verify(token, "boquan");
     const userId = decoded.id;
-    const favorite = await Favorite.findAll({
+    const favorites = await Favorite.findAll({
       where: { userId },
       include: [
         {
           model: Music,
-        },
-        {
-          model: User,
+          include: [
+            {
+              model: User,
+            },
+          ],
         },
       ],
       order: [["createdAt", "DESC"]],
     });
-    if (favorite) {
+    console.log(favorites);
+    
+    if (favorites && favorites.length > 0) {
+      const data = favorites.map((favorite) => ({
+        id: favorite.id,
+        userId: favorite.User?.id,
+        songId: favorite.Music.id,
+        createdAt: favorite.createdAt,
+        updatedAt: favorite.updatedAt,
+        Music: {
+          id: favorite.Music.id,
+          name: favorite.Music.name,
+          file: favorite.Music.file,
+          description: favorite.Music.description,
+          view: favorite.Music.view,
+          favorite: favorite.Music.favorite,
+          repost: favorite.Music.repost,
+          image: favorite.Music.image,
+          status: favorite.Music.status,
+          genreId: favorite.Music.genreId,
+          userId: favorite.Music.userId,
+          albumId: favorite.Music.albumId,
+          createdAt: favorite.Music.createdAt,
+          updatedAt: favorite.Music.updatedAt,
+        },
+        User: favorite.Music.User
+          ? {
+              id: favorite.Music.User.id,
+              username: favorite.Music.User.username,
+              avatar: favorite.Music.User.avatar,
+              followersCount: favorite.Music.User.followersCount,
+            }
+          : null,
+      }));
+
       return res
         .status(200)
-        .json({ message: "Get all favorite success", data: favorite });
+        .json({ message: "Get all favorite success", data: data });
     }
     return res.status(404).json({ message: "Favorite not found" });
   } catch (error) {
